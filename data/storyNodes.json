@@ -1,0 +1,68 @@
+[
+  {
+    "id": "start",
+    "text": "261 BCE. Emperor Ashoka stands outside Kalinga after a brutal victory. The battlefield is silent, but the cost of war is impossible to ignore. What should he do first?",
+    "choices": [
+      {
+        "id": "inspect-battlefield",
+        "label": "Walk through the battlefield and meet survivors"
+      },
+      {
+        "id": "plan-next-campaign",
+        "label": "Prepare to expand the empire further"
+      }
+    ],
+    "nextNode": {
+      "inspect-battlefield": "witness-suffering",
+      "plan-next-campaign": "restless-victory"
+    }
+  },
+  {
+    "id": "witness-suffering",
+    "text": "Ashoka sees families searching for the missing and hears stories of grief from both sides. The triumph of conquest begins to feel hollow.",
+    "choices": [
+      {
+        "id": "embrace-dhamma",
+        "label": "Choose a path of Dhamma and compassion"
+      },
+      {
+        "id": "rule-by-fear",
+        "label": "Tighten control through military fear"
+      }
+    ],
+    "nextNode": {
+      "embrace-dhamma": "dhamma-edicts",
+      "rule-by-fear": "empire-fractures"
+    }
+  },
+  {
+    "id": "restless-victory",
+    "text": "Advisors celebrate expansion plans, but reports of unrest spread. Provinces obey, yet resentment grows under harsh rule.",
+    "choices": [
+      {
+        "id": "double-down",
+        "label": "Continue conquest and suppress dissent"
+      },
+      {
+        "id": "reconsider",
+        "label": "Pause expansion and reflect on Kalinga"
+      }
+    ],
+    "nextNode": {
+      "double-down": "empire-fractures",
+      "reconsider": "witness-suffering"
+    }
+  },
+  {
+    "id": "dhamma-edicts",
+    "text": "Ashoka issues rock and pillar edicts promoting tolerance, justice, and welfare. Instead of conquering with armies, he now seeks to win hearts through ethical governance.",
+    "choices": [],
+    "nextNode": {}
+  },
+  {
+    "id": "empire-fractures",
+    "text": "The empire appears strong but weakens internally as fear replaces trust. Rebellions rise, and Ashoka realizes power without compassion cannot sustain unity.",
+    "choices": [],
+    "nextNode": {}
+  }
+]

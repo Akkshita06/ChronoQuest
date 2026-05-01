@@ -1,0 +1,115 @@
+[
+  {
+    "id": "node-start-ethics",
+    "nodeId": "start",
+    "prompt": "What is the most important historical takeaway from Ashoka's reaction after Kalinga?",
+    "options": [
+      { "id": "a", "label": "Military victory always ensures long-term stability." },
+      { "id": "b", "label": "Moral reflection can transform political leadership." },
+      { "id": "c", "label": "Kalinga had no lasting impact on Mauryan policy." }
+    ],
+    "correctOptionId": "b",
+    "explanation": "Ashoka's post-war reflection is a key example of ethical transformation in rulership."
+  },
+  {
+    "id": "node-witness-suffering",
+    "nodeId": "witness-suffering",
+    "prompt": "Why is this moment pivotal in Ashoka's story?",
+    "options": [
+      { "id": "a", "label": "It marked the start of rapid naval expansion." },
+      { "id": "b", "label": "It led him to prioritize Dhamma over conquest." },
+      { "id": "c", "label": "It ended all administration in the Mauryan Empire." }
+    ],
+    "correctOptionId": "b",
+    "explanation": "Witnessing suffering after Kalinga shifted his focus toward compassion and public welfare."
+  },
+  {
+    "id": "node-restless-victory",
+    "nodeId": "restless-victory",
+    "prompt": "What risk does rule by fear usually create?",
+    "options": [
+      { "id": "a", "label": "Higher trust and stable diplomacy." },
+      { "id": "b", "label": "Short-term control but long-term unrest." },
+      { "id": "c", "label": "Automatic cultural integration." }
+    ],
+    "correctOptionId": "b",
+    "explanation": "Fear can enforce obedience briefly, but it often erodes legitimacy and unity over time."
+  },
+  {
+    "id": "q-kalinga-date",
+    "prompt": "Around when did the Kalinga War occur?",
+    "options": [
+      { "id": "a", "label": "261 BCE" },
+      { "id": "b", "label": "120 BCE" },
+      { "id": "c", "label": "410 BCE" }
+    ],
+    "correctOptionId": "a",
+    "explanation": "The Kalinga War is generally dated to around 261 BCE."
+  },
+  {
+    "id": "q-edicts",
+    "prompt": "Which medium did Ashoka use to spread moral and administrative messages?",
+    "options": [
+      { "id": "a", "label": "Bronze coins only" },
+      { "id": "b", "label": "Rock and pillar edicts" },
+      { "id": "c", "label": "Temple murals exclusively" }
+    ],
+    "correctOptionId": "b",
+    "explanation": "Ashokan rock and pillar edicts are major primary sources for his policy ideals."
+  },
+  {
+    "id": "q-dhamma-focus",
+    "prompt": "Ashoka's Dhamma policy emphasized:",
+    "options": [
+      { "id": "a", "label": "Tolerance, welfare, and ethical conduct" },
+      { "id": "b", "label": "Mandatory military service for all provinces" },
+      { "id": "c", "label": "Complete isolation from neighboring kingdoms" }
+    ],
+    "correctOptionId": "a",
+    "explanation": "Dhamma promoted humane governance, social harmony, and moral responsibility."
+  },
+  {
+    "id": "q-historical-impact",
+    "prompt": "What made Ashoka historically distinctive among conquerors?",
+    "options": [
+      { "id": "a", "label": "He publicly renounced violent expansion after victory" },
+      { "id": "b", "label": "He never fought any wars" },
+      { "id": "c", "label": "He abandoned governance entirely" }
+    ],
+    "correctOptionId": "a",
+    "explanation": "Ashoka is notable for changing imperial strategy after confronting war's human cost."
+  },
+  {
+    "id": "q-governance",
+    "prompt": "In a stable empire, what strengthens unity most sustainably?",
+    "options": [
+      { "id": "a", "label": "Fear without justice" },
+      { "id": "b", "label": "Ethics, fairness, and public trust" },
+      { "id": "c", "label": "Frequent punitive campaigns" }
+    ],
+    "correctOptionId": "b",
+    "explanation": "Long-term stability is built on legitimacy and trust rather than coercion alone."
+  },
+  {
+    "id": "q-source-study",
+    "prompt": "Why are Ashokan edicts important for history learning?",
+    "options": [
+      { "id": "a", "label": "They provide direct evidence of imperial priorities" },
+      { "id": "b", "label": "They are fictional stories from a later period" },
+      { "id": "c", "label": "They record only battlefield tactics" }
+    ],
+    "correctOptionId": "a",
+    "explanation": "Edicts help historians understand governance, communication, and ethical intent."
+  },
+  {
+    "id": "q-citizen-view",
+    "prompt": "From a citizen perspective, Ashoka's post-Kalinga change likely meant:",
+    "options": [
+      { "id": "a", "label": "Less focus on welfare and justice" },
+      { "id": "b", "label": "More welfare-oriented administration" },
+      { "id": "c", "label": "Total collapse of all state institutions" }
+    ],
+    "correctOptionId": "b",
+    "explanation": "The Dhamma phase emphasized welfare, justice, and moral governance."
+  }
+]
