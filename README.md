@@ -118,7 +118,7 @@ npm start
 
 The app is deployed and fully playable at:
 
-**[https://chronoquest-nine.vercel.app](https://chronoquest-nine.vercel.app)**
+**[https://chronoquest-nine.vercel.app](https://chrono-quest-jet.vercel.app/)**
 
 Start with the **Ashoka: Kalinga War** campaign — stand at the crossroads of one of history's greatest transformations, and decide what kind of leader you would be.
 
