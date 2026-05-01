@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import type { QuizQuestion } from "@/types/quiz";
 import type { StoryNode } from "@/types/story";
 
@@ -38,6 +38,12 @@ export function StoryRenderer({
   const [answeredNodeIds, setAnsweredNodeIds] = useState<string[]>([]);
   const [selectedQuizOption, setSelectedQuizOption] = useState<string>("");
   const [isQuizSubmitted, setIsQuizSubmitted] = useState(false);
+  const [typedText, setTypedText] = useState("");
+  const [activeConsequence, setActiveConsequence] = useState<{
+    tone: "war" | "peace" | "power";
+    text: string;
+  } | null>(null);
+  const [isTransitioningNode, setIsTransitioningNode] = useState(false);
 
   const currentNode = nodeMap[currentNodeId];
   const isTerminalNode = (currentNode?.choices.length ?? 0) === 0;
@@ -51,6 +57,21 @@ export function StoryRenderer({
     !currentNodeQuestion || hasAnsweredCurrentNode || isTerminalNode;
 
   useEffect(() => {
+    const storyText = currentNode?.text ?? "";
+    setTypedText("");
+    let index = 0;
+    const intervalId = window.setInterval(() => {
+      index += 1;
+      setTypedText(storyText.slice(0, index));
+      if (index >= storyText.length) {
+        window.clearInterval(intervalId);
+      }
+    }, 14);
+
+    return () => window.clearInterval(intervalId);
+  }, [currentNodeId, currentNode?.text]);
+
+  useEffect(() => {
     if (!isTerminalNode || hasAwardedCompletionXp || !onStoryComplete) return;
     onStoryComplete();
     setHasAwardedCompletionXp(true);
@@ -59,13 +80,23 @@ export function StoryRenderer({
   const handleChoice = (choiceId: string) => {
     if (!currentNode || !canChooseStoryBranch) return;
 
+    const selectedChoice = currentNode.choices.find((choice) => choice.id === choiceId);
     const nextNodeId = currentNode.nextNode[choiceId];
     if (!nextNodeId || !nodeMap[nextNodeId]) return;
 
-    setCurrentNodeId(nextNodeId);
-    setPath((previousPath) => [...previousPath, nextNodeId]);
-    setSelectedQuizOption("");
-    setIsQuizSubmitted(false);
+    if (selectedChoice) {
+      setActiveConsequence(selectedChoice.consequence);
+    }
+
+    setIsTransitioningNode(true);
+    window.setTimeout(() => {
+      setCurrentNodeId(nextNodeId);
+      setPath((previousPath) => [...previousPath, nextNodeId]);
+      setSelectedQuizOption("");
+      setIsQuizSubmitted(false);
+      setIsTransitioningNode(false);
+      setActiveConsequence(null);
+    }, 650);
   };
 
   const handleRestart = () => {
@@ -75,6 +106,8 @@ export function StoryRenderer({
     setAnsweredNodeIds([]);
     setSelectedQuizOption("");
     setIsQuizSubmitted(false);
+    setActiveConsequence(null);
+    setIsTransitioningNode(false);
   };
 
   const handleQuizSubmit = () => {
@@ -115,7 +148,37 @@ export function StoryRenderer({
         </span>
       </div>
 
-      <p className="text-base leading-8 text-slate-200">{currentNode.text}</p>
+      <AnimatePresence mode="wait">
+        <motion.p
+          key={currentNodeId}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.25 }}
+          className="min-h-24 text-base leading-8 text-slate-200"
+        >
+          {typedText}
+        </motion.p>
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {activeConsequence && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, y: -8 }}
+            className={`mt-4 rounded-xl border px-4 py-3 text-sm ${
+              activeConsequence.tone === "war"
+                ? "border-rose-400/70 bg-rose-500/20 text-rose-100"
+                : activeConsequence.tone === "peace"
+                  ? "border-emerald-400/70 bg-emerald-500/20 text-emerald-100"
+                  : "border-amber-300/70 bg-amber-500/20 text-amber-100"
+            }`}
+          >
+            {activeConsequence.text}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {currentNodeQuestion && !isTerminalNode && (
         <div className="mt-6 rounded-2xl border border-indigo-400/35 bg-indigo-950/35 p-4">
@@ -136,8 +199,16 @@ export function StoryRenderer({
                 <motion.button
                   key={option.id}
                   type="button"
-                  whileHover={isQuizSubmitted ? undefined : { scale: 1.01 }}
+                  whileHover={isQuizSubmitted ? undefined : { scale: 1.015 }}
                   whileTap={isQuizSubmitted ? undefined : { scale: 0.985 }}
+                  animate={
+                    shouldHighlightIncorrect
+                      ? { x: [0, -6, 6, -4, 4, 0] }
+                      : shouldHighlightCorrect
+                        ? { scale: [1, 1.03, 1] }
+                        : undefined
+                  }
+                  transition={{ duration: 0.35 }}
                   disabled={isQuizSubmitted}
                   onClick={() => setSelectedQuizOption(option.id)}
                   className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
@@ -211,13 +282,21 @@ export function StoryRenderer({
             <motion.button
               key={choice.id}
               type="button"
-              whileHover={canChooseStoryBranch ? { scale: 1.01, x: 2 } : undefined}
+              whileHover={canChooseStoryBranch ? { scale: 1.015, y: -2 } : undefined}
               whileTap={canChooseStoryBranch ? { scale: 0.985 } : undefined}
               onClick={() => handleChoice(choice.id)}
-              disabled={!canChooseStoryBranch}
-              className="w-full rounded-xl border border-slate-600 bg-slate-800/60 px-4 py-3 text-left text-sm font-medium text-slate-100 transition hover:border-indigo-300 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!canChooseStoryBranch || isTransitioningNode}
+              className="group w-full rounded-2xl border border-slate-600 bg-slate-800/60 px-5 py-4 text-left text-sm font-medium text-slate-100 transition hover:border-indigo-300 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {choice.label}
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 text-xl">{choice.icon}</span>
+                <div>
+                  <p className="text-base font-semibold text-slate-50">{choice.label}</p>
+                  <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate-400 group-hover:text-indigo-200">
+                    Choose your command
+                  </p>
+                </div>
+              </div>
             </motion.button>
           ))}
         </div>

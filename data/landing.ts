@@ -1,10 +1,10 @@
 import type { HeroContent } from "@/types/landing";
 
 export const heroContent: HeroContent = {
-  badge: "Gamified History Learning",
-  title: "Master the past, one quest at a time.",
+  badge: "ChronoQuest: Immersive Learning Arena",
+  title: "History isn't studied. It's lived.",
   subtitle:
-    "ChronoQuest turns world history into interactive timelines, streaks, and challenges so learners stay curious and consistent.",
+    "Enter cinematic story campaigns, command pivotal decisions, and forge your legacy through every timeline you unlock.",
   ctaLabel: "Start Your Timeline",
   ctaHref: "#start",
 };

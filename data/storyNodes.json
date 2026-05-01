@@ -5,11 +5,21 @@
     "choices": [
       {
         "id": "inspect-battlefield",
-        "label": "Walk through the battlefield and meet survivors"
+        "label": "Walk through the battlefield and meet survivors",
+        "icon": "🕊️",
+        "consequence": {
+          "tone": "peace",
+          "text": "You kneel beside the wounded. Their voices pierce the noise of victory and reshape your purpose."
+        }
       },
       {
         "id": "plan-next-campaign",
-        "label": "Prepare to expand the empire further"
+        "label": "Prepare to expand the empire further",
+        "icon": "⚔️",
+        "consequence": {
+          "tone": "war",
+          "text": "You command the war council to march again. Fear spreads faster than loyalty through the provinces."
+        }
       }
     ],
     "nextNode": {
@@ -23,11 +33,21 @@
     "choices": [
       {
         "id": "embrace-dhamma",
-        "label": "Choose a path of Dhamma and compassion"
+        "label": "Choose a path of Dhamma and compassion",
+        "icon": "📜",
+        "consequence": {
+          "tone": "peace",
+          "text": "You renounce conquest by sword and crown the empire with justice, mercy, and reform."
+        }
       },
       {
         "id": "rule-by-fear",
-        "label": "Tighten control through military fear"
+        "label": "Tighten control through military fear",
+        "icon": "👑",
+        "consequence": {
+          "tone": "power",
+          "text": "You tighten your grip with iron decrees. Obedience rises, but trust begins to wither."
+        }
       }
     ],
     "nextNode": {
@@ -41,11 +61,21 @@
     "choices": [
       {
         "id": "double-down",
-        "label": "Continue conquest and suppress dissent"
+        "label": "Continue conquest and suppress dissent",
+        "icon": "⚔️",
+        "consequence": {
+          "tone": "war",
+          "text": "You send legions outward. The map expands, but rebellion simmers beneath the imperial banner."
+        }
       },
       {
         "id": "reconsider",
-        "label": "Pause expansion and reflect on Kalinga"
+        "label": "Pause expansion and reflect on Kalinga",
+        "icon": "🕯️",
+        "consequence": {
+          "tone": "peace",
+          "text": "You halt the drums of war and confront the silence of Kalinga. Reflection opens a new path."
+        }
       }
     ],
     "nextNode": {

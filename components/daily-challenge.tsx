@@ -1,43 +1,96 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  calculateDailyChallengeXp,
+  getTodayUTCKey,
+  selectDailyQuestions,
+  type DailyChallengeResult,
+  type LeaderboardEntry,
+} from "@/lib/daily-challenge";
 import type { QuizQuestion } from "@/types/quiz";
 
 type DailyChallengeProps = {
   questions: QuizQuestion[];
   onComplete: (xpReward: number) => void;
   isCompletedToday: boolean;
+  currentStreak: number;
 };
 
-function shuffleQuestions(items: QuizQuestion[]) {
-  const cloned = [...items];
-  for (let i = cloned.length - 1; i > 0; i -= 1) {
-    const randomIndex = Math.floor(Math.random() * (i + 1));
-    [cloned[i], cloned[randomIndex]] = [cloned[randomIndex], cloned[i]];
-  }
-  return cloned;
-}
+const LEADERBOARD_KEY = "chronoquest.dailyChallenge.leaderboard";
+const DAILY_RESULT_PREFIX = "chronoquest.dailyChallenge.result";
 
 export function DailyChallenge({
   questions,
   onComplete,
   isCompletedToday,
+  currentStreak,
 }: DailyChallengeProps) {
-  const challengeQuestions = useMemo(
-    () => shuffleQuestions(questions).slice(0, 5),
-    [questions],
+  const [challengeQuestions, setChallengeQuestions] = useState<QuizQuestion[] | null>(
+    null,
   );
-
+  const [dateKey, setDateKey] = useState<string | null>(null);
+  const [dailySeed, setDailySeed] = useState<number | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOptionId, setSelectedOptionId] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
+  const [completedResult, setCompletedResult] = useState<DailyChallengeResult | null>(
+    null,
+  );
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [shareStatus, setShareStatus] = useState<"idle" | "shared" | "copied">("idle");
 
-  const currentQuestion = challengeQuestions[currentIndex];
-  const isLastQuestion = currentIndex === challengeQuestions.length - 1;
+  useEffect(() => {
+    const todayKey = getTodayUTCKey();
+    const selection = selectDailyQuestions(questions, todayKey, 5);
+    setDateKey(todayKey);
+    setDailySeed(selection.seed);
+    setChallengeQuestions(selection.questions);
+    setCurrentIndex(0);
+    setSelectedOptionId("");
+    setSubmitted(false);
+    setCorrectCount(0);
+    setIsFinished(false);
+    setShareStatus("idle");
+
+    try {
+      const rawBoard = window.localStorage.getItem(LEADERBOARD_KEY);
+      if (rawBoard) {
+        setLeaderboard(JSON.parse(rawBoard) as LeaderboardEntry[]);
+      } else {
+        setLeaderboard([]);
+      }
+
+      const rawResult = window.localStorage.getItem(
+        `${DAILY_RESULT_PREFIX}.${todayKey}`,
+      );
+      if (rawResult) {
+        setCompletedResult(JSON.parse(rawResult) as DailyChallengeResult);
+      } else {
+        setCompletedResult(null);
+      }
+    } catch {
+      setLeaderboard([]);
+      setCompletedResult(null);
+    }
+  }, [questions]);
+
+  const currentQuestion = challengeQuestions?.[currentIndex];
+  const isLastQuestion =
+    challengeQuestions !== null && currentIndex === challengeQuestions.length - 1;
   const isCorrect = selectedOptionId === currentQuestion?.correctOptionId;
+  const projectedStreak = isCompletedToday ? currentStreak : currentStreak + 1;
+  const todayLeaderboard = useMemo(
+    () =>
+      leaderboard
+        .filter((entry) => (dateKey ? entry.dateKey === dateKey : true))
+        .sort((a, b) => b.totalXp - a.totalXp)
+        .slice(0, 5),
+    [leaderboard, dateKey],
+  );
 
   const handleSubmit = () => {
     if (!selectedOptionId || submitted || !currentQuestion) return;
@@ -52,8 +105,25 @@ export function DailyChallenge({
 
     if (isLastQuestion) {
       const finalCorrectCount = isCorrect ? correctCount + 1 : correctCount;
-      const xpReward = finalCorrectCount * 30;
-      onComplete(xpReward);
+      const totalQuestions = challengeQuestions?.length ?? 5;
+      const xp = calculateDailyChallengeXp({
+        correctCount: finalCorrectCount,
+        streak: projectedStreak,
+        totalQuestions,
+      });
+      const result: DailyChallengeResult = {
+        dateKey: dateKey ?? getTodayUTCKey(),
+        correctCount: finalCorrectCount,
+        totalQuestions,
+        baseXp: xp.baseXp,
+        streakMultiplier: xp.streakMultiplier,
+        perfectMultiplier: xp.perfectMultiplier,
+        totalXp: xp.totalXp,
+        seed: dailySeed ?? 0,
+      };
+      onComplete(result.totalXp);
+      setCompletedResult(result);
+      persistResult(result);
       setIsFinished(true);
       return;
     }
@@ -63,29 +133,91 @@ export function DailyChallenge({
     setSubmitted(false);
   };
 
-  if (isCompletedToday) {
+  const persistResult = (result: DailyChallengeResult) => {
+    const entry: LeaderboardEntry = {
+      id: `${result.dateKey}-${result.totalXp}-${result.correctCount}`,
+      dateKey: result.dateKey,
+      playerName: "You",
+      correctCount: result.correctCount,
+      totalQuestions: result.totalQuestions,
+      totalXp: result.totalXp,
+      completedAt: new Date().toISOString(),
+    };
+
+    const updated = [...leaderboard, entry]
+      .sort((a, b) => b.totalXp - a.totalXp)
+      .slice(0, 30);
+    setLeaderboard(updated);
+    window.localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(updated));
+    window.localStorage.setItem(
+      `${DAILY_RESULT_PREFIX}.${result.dateKey}`,
+      JSON.stringify(result),
+    );
+  };
+
+  const handleShareResult = async () => {
+    if (!completedResult) return;
+    const summary =
+      `ChronoQuest Daily Challenge (${completedResult.dateKey})\n` +
+      `Score: ${completedResult.correctCount}/${completedResult.totalQuestions}\n` +
+      `XP: ${completedResult.totalXp} (Base ${completedResult.baseXp}, ` +
+      `Streak x${completedResult.streakMultiplier.toFixed(2)}, ` +
+      `Perfect x${completedResult.perfectMultiplier.toFixed(2)})`;
+
+    if (navigator.share) {
+      await navigator.share({
+        title: "ChronoQuest Daily Challenge",
+        text: summary,
+      });
+      setShareStatus("shared");
+      return;
+    }
+
+    await navigator.clipboard.writeText(summary);
+    setShareStatus("copied");
+  };
+
+  if (isCompletedToday && completedResult) {
     return (
       <section className="mx-auto mt-6 w-full max-w-5xl rounded-3xl border border-emerald-400/40 bg-emerald-900/25 p-6 shadow-[0_14px_60px_rgba(16,185,129,0.12)] sm:p-8">
-        <h3 className="text-lg font-semibold text-emerald-100">Daily Challenge</h3>
-        <p className="mt-2 text-sm text-emerald-200">
-          You already completed today&apos;s 5-question challenge. Come back tomorrow
-          to extend your streak.
-        </p>
+        <h3 className="text-lg font-semibold text-emerald-100">
+          Daily Challenge Complete
+        </h3>
+        <ResultCard
+          result={completedResult}
+          shareStatus={shareStatus}
+          onShare={handleShareResult}
+        />
+        <Leaderboard board={todayLeaderboard} />
       </section>
     );
   }
 
-  if (!currentQuestion) {
-    return null;
+  if (challengeQuestions === null || !currentQuestion) {
+    return (
+      <section className="mx-auto mt-6 w-full max-w-5xl rounded-3xl border border-violet-400/30 bg-slate-900/80 p-6 shadow-[0_14px_60px_rgba(139,92,246,0.18)] backdrop-blur-xl sm:p-8">
+        <h3 className="text-lg font-semibold text-violet-100">Daily Challenge</h3>
+        <p className="mt-2 text-sm text-slate-300">
+          Preparing your daily challenge...
+        </p>
+      </section>
+    );
   }
 
   if (isFinished) {
     return (
       <section className="mx-auto mt-6 w-full max-w-5xl rounded-3xl border border-indigo-400/40 bg-indigo-900/25 p-6 shadow-[0_14px_60px_rgba(99,102,241,0.14)] sm:p-8">
         <h3 className="text-lg font-semibold text-indigo-100">Daily Challenge Complete</h3>
-        <p className="mt-2 text-sm text-indigo-200">
-          Score: {correctCount}/5 correct. You earned {correctCount * 30} XP.
-        </p>
+        {completedResult && (
+          <>
+            <ResultCard
+              result={completedResult}
+              shareStatus={shareStatus}
+              onShare={handleShareResult}
+            />
+            <Leaderboard board={todayLeaderboard} />
+          </>
+        )}
       </section>
     );
   }
@@ -103,8 +235,12 @@ export function DailyChallenge({
           Question {currentIndex + 1}/5
         </span>
       </div>
+      <p className="text-xs uppercase tracking-[0.14em] text-violet-300">
+        Daily Seed {dailySeed ?? "----"} - streak bonus x
+        {Math.min(1 + projectedStreak * 0.05, 1.5).toFixed(2)}
+      </p>
 
-      <p className="text-slate-100">{currentQuestion.prompt}</p>
+      <p className="mt-3 text-slate-100">{currentQuestion.prompt}</p>
 
       <div className="mt-4 grid gap-2">
         {currentQuestion.options.map((option) => {
@@ -119,6 +255,14 @@ export function DailyChallenge({
               type="button"
               whileHover={!submitted ? { scale: 1.01 } : undefined}
               whileTap={!submitted ? { scale: 0.985 } : undefined}
+              animate={
+                showIncorrectState
+                  ? { x: [0, -6, 6, -4, 4, 0] }
+                  : showCorrectState
+                    ? { scale: [1, 1.03, 1] }
+                    : undefined
+              }
+              transition={{ duration: 0.35 }}
               disabled={submitted}
               onClick={() => setSelectedOptionId(option.id)}
               className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
@@ -138,7 +282,16 @@ export function DailyChallenge({
       </div>
 
       {submitted && (
-        <p className="mt-3 text-sm text-slate-200">{currentQuestion.explanation}</p>
+        <div className="mt-3 space-y-2">
+          <p
+            className={`text-xs font-semibold uppercase tracking-[0.12em] ${
+              isCorrect ? "text-emerald-300" : "text-rose-300"
+            }`}
+          >
+            {isCorrect ? "Perfect strike: +30 base XP banked" : "No base XP this round"}
+          </p>
+          <p className="text-sm text-slate-200">{currentQuestion.explanation}</p>
+        </div>
       )}
 
       <div className="mt-4 flex items-center gap-3">
@@ -164,5 +317,80 @@ export function DailyChallenge({
         </motion.button>
       </div>
     </motion.section>
+  );
+}
+
+function ResultCard({
+  result,
+  shareStatus,
+  onShare,
+}: {
+  result: DailyChallengeResult;
+  shareStatus: "idle" | "shared" | "copied";
+  onShare: () => Promise<void>;
+}) {
+  return (
+    <div className="mt-4 rounded-2xl border border-indigo-300/40 bg-slate-900/65 p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-300">
+        Daily Summary
+      </p>
+      <p className="mt-2 text-sm text-slate-200">
+        Score {result.correctCount}/{result.totalQuestions} - Total XP{" "}
+        <span className="font-bold text-amber-200">{result.totalXp}</span>
+      </p>
+      <p className="mt-2 text-xs text-slate-400">
+        Base {result.baseXp} XP x Streak {result.streakMultiplier.toFixed(2)} x
+        Perfect {result.perfectMultiplier.toFixed(2)}
+      </p>
+      <motion.button
+        type="button"
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.97 }}
+        onClick={onShare}
+        className="mt-3 rounded-lg bg-linear-to-r from-fuchsia-600 to-indigo-600 px-4 py-2 text-sm font-semibold text-white"
+      >
+        Share Result
+      </motion.button>
+      <AnimatePresence>
+        {shareStatus !== "idle" && (
+          <motion.p
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-300"
+          >
+            {shareStatus === "shared" ? "Shared successfully" : "Copied to clipboard"}
+          </motion.p>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function Leaderboard({ board }: { board: LeaderboardEntry[] }) {
+  return (
+    <div className="mt-4 rounded-2xl border border-slate-700 bg-slate-900/60 p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-300">
+        Local Leaderboard
+      </p>
+      <div className="mt-3 space-y-2">
+        {board.length === 0 ? (
+          <p className="text-sm text-slate-400">No entries yet for today.</p>
+        ) : (
+          board.map((entry, index) => (
+            <div
+              key={`${entry.id}-${index}`}
+              className="flex items-center justify-between rounded-lg border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm"
+            >
+              <p className="text-slate-200">
+                #{index + 1} {entry.playerName} - {entry.correctCount}/
+                {entry.totalQuestions}
+              </p>
+              <p className="font-semibold text-amber-200">{entry.totalXp} XP</p>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
   );
 }
